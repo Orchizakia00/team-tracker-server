@@ -31,7 +31,36 @@ async function run() {
         const userCollection = client.db('teamDB').collection('users');
         const reviewCollection = client.db('teamDB').collection('reviews');
 
+        // jwt related api
+        app.post('/jwt', async (req, res) => {
+            const user = req.body;
+            const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' })
+            res.send({ token });
+        })
+
+        // middlewares
+        const verifyToken = (req, res, next) => {
+            console.log('inside verifyToken', req.headers.authorization);
+            if (!req.headers.authorization) {
+                return res.status(401).send({ message: 'Unauthorized Access' })
+            }
+            const token = req.headers.authorization.split(' ')[1];
+            jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+                if (err) {
+                    return res.status(401).send({ message: 'Unauthorized Access' });
+                }
+                req.decoded = decoded;
+                next();
+            })
+        }
+
         // user related api
+        app.get('/users', verifyToken, async (req, res) => {
+            // console.log(req.headers);
+            const result = await userCollection.find().toArray();
+            res.send(result);
+        })
+
         app.post('/users', async (req, res) => {
             const user = req.body;
             const query = { email: user.email }
@@ -43,12 +72,7 @@ async function run() {
             res.send(result);
         })
 
-        app.get('/users', async (req, res) => {
-            const result = await userCollection.find().toArray();
-            res.send(result);
-        })
-
-        app.patch('/users/admin/:id', async(req, res) => {
+        app.patch('/users/admin/:id', async (req, res) => {
             const id = req.params.id;
             const filter = { _id: new ObjectId(id) };
             const updatedDoc = {
@@ -56,7 +80,7 @@ async function run() {
                     role: 'admin'
                 }
             }
-            const result = await userCollection. updateOne(filter, updatedDoc);
+            const result = await userCollection.updateOne(filter, updatedDoc);
             res.send(result);
         })
 
