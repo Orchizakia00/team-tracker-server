@@ -30,6 +30,7 @@ async function run() {
 
         const userCollection = client.db('teamDB').collection('users');
         const reviewCollection = client.db('teamDB').collection('reviews');
+        const workCollection = client.db('teamDB').collection('works');
 
         // jwt related api
         app.post('/jwt', async (req, res) => {
@@ -65,10 +66,20 @@ async function run() {
             }
             next();
         }
+        const verifyHr = async (req, res, next) => {
+            const email = req.decoded.email;
+            const query = { email: email };
+            const user = await userCollection.findOne(query);
+            console.log('User Roles:', user?.role);
+            const isHr = user?.role === 'HR';
+            if (!isHr) {
+                return res.status(403).send({ message: 'Forbidden access' });
+            }
+            next();
+        }
 
         // user related api
         app.get('/users', verifyToken, verifyAdmin, async (req, res) => {
-            // console.log(req.headers);
             const result = await userCollection.find().toArray();
             res.send(result);
         })
@@ -102,6 +113,7 @@ async function run() {
             }
             res.send({ hr });
         })
+
         app.get('/user/employee/:email', verifyToken, async (req, res) => {
             const email = req.params.email;
             if (email !== req.decoded.email) {
@@ -163,6 +175,18 @@ async function run() {
         // reviews api
         app.get('/reviews', async (req, res) => {
             const result = await reviewCollection.find().toArray();
+            res.send(result);
+        })
+
+        // works api
+        app.get('/works', async (req, res) => {
+            const result = await workCollection.find().toArray();
+            res.send(result);
+        })
+
+        app.post('/works', async (req, res) => {
+            const workDetails = req.body;
+            const result = await workCollection.insertOne(workDetails);
             res.send(result);
         })
 
