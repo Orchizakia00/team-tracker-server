@@ -88,6 +88,35 @@ async function run() {
             res.send({ admin });
         })
 
+        app.get('/user/hr/:email', verifyToken, async (req, res) => {
+            const email = req.params.email;
+            if (email !== req.decoded.email) {
+                return res.status(403).send({ message: 'Unauthorized Access' });
+            }
+
+            const query = { email: email };
+            const user = await userCollection.findOne(query);
+            let hr = false;
+            if (user) {
+                hr = user?.role == 'HR';
+            }
+            res.send({ hr });
+        })
+        app.get('/user/employee/:email', verifyToken, async (req, res) => {
+            const email = req.params.email;
+            if (email !== req.decoded.email) {
+                return res.status(403).send({ message: 'Unauthorized Access' });
+            }
+
+            const query = { email: email };
+            const user = await userCollection.findOne(query);
+            let employee = false;
+            if (user) {
+                employee = user?.role == 'employee';
+            }
+            res.send({ employee });
+        })
+
         app.post('/users', async (req, res) => {
             const user = req.body;
             const query = { email: user.email }
