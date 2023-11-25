@@ -40,7 +40,7 @@ async function run() {
 
         // middlewares
         const verifyToken = (req, res, next) => {
-            console.log('inside verifyToken', req.headers.authorization);
+            // console.log('inside verifyToken', req.headers.authorization);
             if (!req.headers.authorization) {
                 return res.status(401).send({ message: 'Unauthorized Access' })
             }
@@ -49,6 +49,7 @@ async function run() {
                 if (err) {
                     return res.status(401).send({ message: 'Unauthorized Access' });
                 }
+
                 req.decoded = decoded;
                 next();
             })
@@ -93,7 +94,8 @@ async function run() {
             const existingUser = await userCollection.findOne(query);
             if (existingUser) {
                 return res.send({ message: 'user already exist', insertedId: null })
-            }
+            };
+
             const result = await userCollection.insertOne(user);
             res.send(result);
         })
@@ -103,7 +105,19 @@ async function run() {
             const filter = { _id: new ObjectId(id) };
             const updatedDoc = {
                 $set: {
-                    role: 'admin'
+                    role: 'HR'
+                }
+            }
+            const result = await userCollection.updateOne(filter, updatedDoc);
+            res.send(result);
+        })
+
+        app.patch('/users/:id', verifyToken, verifyAdmin, async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) };
+            const updatedDoc = {
+                $set: {
+                    status: 'fired'
                 }
             }
             const result = await userCollection.updateOne(filter, updatedDoc);
