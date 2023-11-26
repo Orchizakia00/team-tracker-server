@@ -85,7 +85,15 @@ async function run() {
         })
 
         app.get('/users/hr', async (req, res) => {
-            const result = await userCollection.find().toArray();
+            const filter = { role: 'employee' };
+            const result = await userCollection.find(filter).toArray();
+            res.send(result);
+        })
+
+        app.get('/users/hr/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await userCollection.findOne(query);
             res.send(result);
         })
 
@@ -161,11 +169,17 @@ async function run() {
         app.patch('/users/hr/:id', verifyToken, verifyHr, async (req, res) => {
             const id = req.params.id;
             const filter = { _id: new ObjectId(id) };
+            const existingUser = await userCollection.findOne(filter);
+
+            if (!existingUser) {
+                return res.status(404).send('User not found');
+            }
+            
             const updatedDoc = {
                 $set: {
-                    status: 'verified'
+                    isVerified: !existingUser.isVerified
                 }
-            }
+            };
             const result = await userCollection.updateOne(filter, updatedDoc);
             res.send(result);
         })
