@@ -181,6 +181,31 @@ async function run() {
             res.send(result);
         })
 
+        app.patch('/users/hr/:id/payments', verifyToken, verifyHr, async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) };
+            const existingUser = await userCollection.findOne(filter);
+
+            // Check if a payment has already been made for the specified month
+            const { month, year } = req.body.date;
+            const existingPayment = existingUser.payment;
+
+            if (existingPayment && existingPayment.date.month === month && existingPayment.date.year === year) {
+                return res.status(400).json({ error: 'Payment already made for this month' });
+            }
+
+            const payment = req.body;
+            console.log(payment);
+
+            const updatedDoc = {
+                $set: {
+                    payment: payment
+                }
+            };
+            const result = await userCollection.updateOne(filter, updatedDoc);
+            res.send(result);
+        })
+
         app.patch('/users/:id', verifyToken, verifyAdmin, async (req, res) => {
             const id = req.params.id;
             const filter = { _id: new ObjectId(id) };
@@ -228,7 +253,7 @@ async function run() {
         app.post('/create-payment-intent', async (req, res) => {
             const { price } = req.body;
             const amount = parseInt(price * 100);
-            console.log('inside payment intent',amount);
+            console.log('inside payment intent', amount);
 
             const paymentIntent = await stripe.paymentIntents.create({
                 amount: amount,
