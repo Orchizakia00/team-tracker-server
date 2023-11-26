@@ -84,6 +84,11 @@ async function run() {
             res.send(result);
         })
 
+        app.get('/users/hr', async (req, res) => {
+            const result = await userCollection.find().toArray();
+            res.send(result);
+        })
+
         app.get('/user/admin/:email', verifyToken, async (req, res) => {
             const email = req.params.email;
             if (email !== req.decoded.email) {
@@ -153,12 +158,24 @@ async function run() {
             res.send(result);
         })
 
+        app.patch('/users/hr/:id', verifyToken, verifyHr, async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) };
+            const updatedDoc = {
+                $set: {
+                    status: 'verified'
+                }
+            }
+            const result = await userCollection.updateOne(filter, updatedDoc);
+            res.send(result);
+        })
+
         app.patch('/users/:id', verifyToken, verifyAdmin, async (req, res) => {
             const id = req.params.id;
             const filter = { _id: new ObjectId(id) };
             const updatedDoc = {
                 $set: {
-                    status: 'fired'
+                    action: 'fired'
                 }
             }
             const result = await userCollection.updateOne(filter, updatedDoc);
