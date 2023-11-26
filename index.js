@@ -180,7 +180,12 @@ async function run() {
 
         // works api
         app.get('/works', async (req, res) => {
-            const result = await workCollection.find().toArray();
+            console.log(req.query.email);
+            let query = {};
+            if (req.query?.email) {
+                query = { email: req.query.email }
+            }
+            const result = await workCollection.find(query).toArray();
             res.send(result);
         })
 
