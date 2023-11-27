@@ -86,6 +86,11 @@ async function run() {
             res.send(result);
         })
 
+        app.get('/users/employee', async (req, res) => {
+            const result = await userCollection.find().toArray();
+            res.send(result);
+        })
+
         app.get('/users/hr', async (req, res) => {
             const filter = { role: 'employee' };
             const result = await userCollection.find(filter).toArray();
