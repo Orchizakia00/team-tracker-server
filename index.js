@@ -32,6 +32,7 @@ async function run() {
         const userCollection = client.db('teamDB').collection('users');
         const reviewCollection = client.db('teamDB').collection('reviews');
         const workCollection = client.db('teamDB').collection('works');
+        const paymentCollection = client.db('teamDB').collection('payments');
 
         // jwt related api
         app.post('/jwt', async (req, res) => {
@@ -181,31 +182,6 @@ async function run() {
             res.send(result);
         })
 
-        app.patch('/users/hr/:id/payments', verifyToken, verifyHr, async (req, res) => {
-            const id = req.params.id;
-            const filter = { _id: new ObjectId(id) };
-            const existingUser = await userCollection.findOne(filter);
-
-            // Check if a payment has already been made for the specified month
-            const { month, year } = req.body.date;
-            const existingPayment = existingUser.payment;
-
-            if (existingPayment && existingPayment.date.month === month && existingPayment.date.year === year) {
-                return res.status(400).json({ error: 'Payment already made for this month' });
-            }
-
-            const payment = req.body;
-            console.log(payment);
-
-            const updatedDoc = {
-                $set: {
-                    payment: payment
-                }
-            };
-            const result = await userCollection.updateOne(filter, updatedDoc);
-            res.send(result);
-        })
-
         app.patch('/users/:id', verifyToken, verifyAdmin, async (req, res) => {
             const id = req.params.id;
             const filter = { _id: new ObjectId(id) };
@@ -222,6 +198,34 @@ async function run() {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
             const result = await userCollection.deleteOne(query);
+            res.send(result);
+        })
+
+        // payment methods
+        app.post('/payments', verifyToken, verifyHr, async (req, res) => {
+            const payment = req.body;
+
+            const { month, year } = payment.date;
+
+            // Check if a payment already exists for the specified month and year
+            const existingPayment = await paymentCollection.findOne({
+                employeeId: payment.employeeId,
+                'date.month': month,
+                'date.year': year
+            });
+
+            if (existingPayment) {
+                return res.status(400).json({ error: 'Payment already made for this month' });
+            }
+
+            const result = await paymentCollection.insertOne(payment);
+            res.send(result);
+        })
+
+        app.get('/payments', async (req, res) => {
+            const email = req.query.email;
+            const query = { email: email };
+            const result = await paymentCollection.find(query).toArray();
             res.send(result);
         })
 
