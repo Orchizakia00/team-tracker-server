@@ -246,6 +246,11 @@ async function run() {
             res.send(result);
         })
 
+        app.get('/works/hr', verifyToken, verifyHr, async (req, res) => {
+            const result = await workCollection.find().toArray();
+            res.send(result);
+        })
+
         app.post('/works', async (req, res) => {
             const workDetails = req.body;
             const result = await workCollection.insertOne(workDetails);
